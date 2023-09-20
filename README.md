@@ -1,3 +1,71 @@
+map: https://github.com/tunnima/my-docs
+
+go version: go1.20.5 linux/amd64
+# Install:
+## on B.B.B.B:
+cat /lib/systemd/system/reverse-tunnel.service
+```text
+[Unit]
+Description=reverse-tunnel
+StartLimitIntervalSec=300
+StartLimitBurst=10
+After=network-online.target
+
+[Service]
+Type=simple
+User=root
+Restart=on-failure
+RestartSec=2s
+ExecStart=/etc/reverse-tunnel/rtun -f /etc/reverse-tunnel/rtun.yml
+
+[Install]
+WantedBy=multi-user.target
+```
+---------------------------
+cat /etc/reverse-tunnel/rtun.yml
+```text
+# Specify the gateway server.
+gateway_url: ws://A.A.A.A:8001
+
+# A key registered in the gateway server configuration file.
+auth_key: <hidden-key>
+
+forwards:
+  # Forward 10022/tcp on the gateway server to localhost:22 (tcp)
+  - port: 3125/tcp
+    destination: 127.0.0.1:4445
+```
+
+## on A.A.A.A:
+cat /lib/systemd/system/reverse-tunnel.service
+```text
+[Unit]
+Description=reverse-tunnel
+StartLimitIntervalSec=300
+StartLimitBurst=10
+After=network-online.target
+
+[Service]
+Type=simple
+User=root
+Restart=on-failure
+RestartSec=2s
+ExecStart=/etc/reverse-tunnel/rtun-server -f /etc/reverse-tunnel/rtun-server.yml
+
+[Install]
+WantedBy=multi-user.target
+```
+--------------------------
+cat /etc/reverse-tunnel/rtun-server.yml
+```text
+# Gateway server binds to this address to communicate with agents.
+control_address: 0.0.0.0:8001
+
+# List of authorized agents follows.
+agents:
+  - auth_key: <hidden-key>
+    ports: [3125/tcp]
+```
 Reverse tunnel TCP and UDP
 ==========================
 
